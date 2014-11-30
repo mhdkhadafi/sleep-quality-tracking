@@ -44,4 +44,40 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
         android:textSize="40dp" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Authenticate Moves"
+        android:id="@+id/authenticateMoves"
+        android:layout_below="@+id/sound"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:id="@+id/receivedToken"
+        android:layout_below="@+id/authenticateMoves"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Get Moves Data"
+        android:id="@+id/getMovesData"
+        android:layout_below="@+id/receivedToken"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:id="@+id/movesData"
+        android:layout_below="@+id/getMovesData"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
 </RelativeLayout>
