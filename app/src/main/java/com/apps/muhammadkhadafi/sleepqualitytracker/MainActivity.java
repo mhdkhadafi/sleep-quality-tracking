@@ -63,6 +63,7 @@ public class MainActivity extends Activity {
     TextView movesToken;
     TextView movesData;
     Button getMovesData;
+    Button authenticateMisfit;
     SoundMeter soundMeter;
     public static Handler mHandler;
     public static Timer mTimer = new Timer();
@@ -90,6 +91,7 @@ public class MainActivity extends Activity {
         movesToken = (TextView) findViewById(R.id.receivedToken);
         movesData = (TextView) findViewById(R.id.movesData);
         getMovesData = (Button) findViewById(R.id.getMovesData);
+        authenticateMisfit = (Button) findViewById(R.id.authenticateMisfit);
 
         SensorManager sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         Sensor lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
@@ -105,6 +107,13 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 doRequestAuthInApp();
+            }
+        });
+
+        authenticateMisfit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                doRequestAuthMisfit();
             }
         });
 
@@ -233,6 +242,23 @@ public class MainActivity extends Activity {
         } catch (ActivityNotFoundException e) {
             Toast.makeText(this, "Moves app not installed", Toast.LENGTH_SHORT).show();
         }
+
+    }
+
+    private void doRequestAuthMisfit() {
+
+        //moves://app/authorize?client_id=<your client id>&redirect_uri=<redirect_uri>&scope=<scope>
+
+//        Uri uri = createAuthUri("moves", "app", "/authorize").build();
+//        Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+//        try {
+//            startActivityForResult(intent, REQUEST_AUTHORIZE);
+//        } catch (ActivityNotFoundException e) {
+//            Toast.makeText(this, "Moves app not installed", Toast.LENGTH_SHORT).show();
+//        }
+
+        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://api.misfitwearables.com/auth/dialog/authorize?response_type=code&client_id=e5OZut6KodmxyrLR&redirect_uri=https://glacial-ridge-1116.herokuapp.com/&scope=public,birthday,email"));
+        startActivity(browserIntent);
 
     }
 
