@@ -44,6 +44,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -51,6 +52,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.lang.Object.*;
 import java.util.logging.LogRecord;
 
 
@@ -163,6 +165,31 @@ public class MainActivity extends Activity {
             authenticateMisfit.setActivated(false);
         }
         editor.commit();
+
+        FileOutputStream fosTest = null;
+        File fileTest;
+        String fileNameTest = "";
+
+        if (!isExternalStorageAvailable() || isExternalStorageReadOnly()) {
+        }
+        else {
+
+            fileNameTest = "initial.txt";
+            fileTest = new File(getExternalFilesDir("MyFileStorage"), fileNameTest);
+
+            try {
+                fosTest = new FileOutputStream(fileTest);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+
+            try {
+                fosTest.write("testtest".getBytes());
+                fosTest.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
@@ -260,7 +287,7 @@ public class MainActivity extends Activity {
                             int minuteCal = c.get(Calendar.MINUTE);
                             int secondCal = c.get(Calendar.SECOND);
 
-                            String string = "log" + ((monthCal < 10) ? "0" + monthCal : "" + monthCal)
+                            String string = "env" + ((monthCal < 10) ? "0" + monthCal : "" + monthCal)
                                     + ((dateCal < 10) ? "0" + dateCal : "" + dateCal)
                                     + yearCal + ((hourCal < 10) ? "0" + hourCal : "" + hourCal)
                                     + ((minuteCal < 10) ? "0" + minuteCal : "" + minuteCal)
@@ -268,7 +295,7 @@ public class MainActivity extends Activity {
                                     lightSensor.getText() + ", Sound: " + soundSensor.getText() + "\n";
 
                             try {
-                                fos.write((string + "\n").getBytes());
+                                fos.write(string.getBytes());
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
@@ -418,7 +445,7 @@ public class MainActivity extends Activity {
             return accessToken;
         }
 
-        private String getMovesData() throws IOException, JSONException {
+        private String getMovesData() throws IOException, JSONException, ParseException {
 
             SharedPreferences prefs = getApplicationContext().getSharedPreferences("Prefs", 0);
             String accessToken = prefs.getString("moves_access_token", "");
@@ -429,7 +456,7 @@ public class MainActivity extends Activity {
 
             String yesterdayDate = sdf.format(d);
 
-            String urlResult = "https://api.moves-app.com/api/1.1/user/summary/daily/" +
+            String urlResult = "https://api.moves-app.com/api/1.1/user/activities/daily/" +
                     yesterdayDate + "?access_token=" + accessToken;
             HttpClient httpclient = new DefaultHttpClient();
             HttpGet httpGet = new HttpGet(urlResult);
@@ -445,24 +472,41 @@ public class MainActivity extends Activity {
 //            JSONArray jsonArray = jsonObject.names();
 //
 //            Log.d("response", jsonArray.toString());
-            JSONArray jsonArray = jsonObject.getJSONArray("summary");
+            JSONArray jsonArray = jsonObject.getJSONArray("segments");
 
             Log.d("response", "summary: " + jsonArray);
 
             int totalSteps = 0;
             int walkingDuration = 0;
+            String movesData = "";
+
+            SimpleDateFormat format1 = new SimpleDateFormat("yyyyMMdd'T'hhmmssZ");
+            SimpleDateFormat format2 = new SimpleDateFormat("yyyyMMddhhmmss");
+
+            int totalDuration = 0;
+
             for (int i = 0; i < jsonArray.length(); i++) {
-                Log.d("response", "activity: " + jsonArray.getJSONObject(i).getString("activity"));
-                if (jsonArray.getJSONObject(i).getString("activity").equals("walking")) {
-                    totalSteps = jsonArray.getJSONObject(i).getInt("steps");
-                    walkingDuration = jsonArray.getJSONObject(i).getInt("duration");
-                    Log.d("response", "result: " + totalSteps + "-" + walkingDuration);
+                if (jsonArray.getJSONObject(i).getString("type").equals("move")) {
+                    JSONArray activityArray = jsonArray.getJSONObject(i).getJSONArray("activities");
+                    for (int j = 0; j < activityArray.length(); j++) {
+                        String activityType = activityArray.getJSONObject(j).getString("activity");
+                        if (activityType.equals("walking") || activityType.equals("running") || activityType.equals("cycling")) {
+                            movesData += (format2.format(format1.parse(activityArray.getJSONObject(j).getString("startTime")))
+                                    + "-" + format2.format(format1.parse(activityArray.getJSONObject(j).getString("endTime")))
+                                    + "----" + activityArray.getJSONObject(j).getInt("duration") + "\n");
+
+                            totalDuration += activityArray.getJSONObject(j).getInt("duration");
+                        }
+                    }
                 }
-                else continue;
             }
 
-            String movesData = "Your activity data (" + sdf2.format(d) + "):\n" + totalSteps +
-                    " walking steps\n" + walkingDuration + " walking duration";
+            movesData += ("" + totalDuration);
+
+            Log.d("response", "movesdata: " +movesData);
+
+//            String movesData = "Your activity data (" + sdf2.format(d) + "):\n" + totalSteps +
+//                    " walking steps\n" + walkingDuration + " walking duration";
 
             return movesData;
         }
@@ -481,7 +525,46 @@ public class MainActivity extends Activity {
                 movesToken.setText("Token set");
             }
             else if (result[0] == "data") {
-                movesData.setText(result[1]);
+//                movesData.setText(result[1]);
+
+                FileOutputStream fosMoves = null;
+                File fileMoves;
+                String fileNameMoves = "";
+
+                if (!isExternalStorageAvailable() || isExternalStorageReadOnly()) {
+                }
+                else {
+
+                    Calendar c = Calendar.getInstance();
+
+                    int monthCal = c.get(Calendar.MONTH) + 1;
+                    int dateCal = c.get(Calendar.DATE);
+                    int yearCal = c.get(Calendar.YEAR);
+                    int hourCal = c.get(Calendar.HOUR_OF_DAY);
+                    int minuteCal = c.get(Calendar.MINUTE);
+                    int secondCal = c.get(Calendar.SECOND);
+
+                    fileNameMoves = "moves" + ((monthCal < 10) ? "0" + monthCal : "" + monthCal)
+                            + ((dateCal < 10) ? "0" + dateCal : "" + dateCal)
+                            + yearCal + ((hourCal < 10) ? "0" + hourCal : "" + hourCal)
+                            + ((minuteCal < 10) ? "0" + minuteCal : "" + minuteCal)
+                            + ((secondCal < 10) ? "0" + secondCal : "" + secondCal) + ".txt";
+
+                    fileMoves = new File(getExternalFilesDir("MyFileStorage"), fileNameMoves);
+
+                    try {
+                        fosMoves = new FileOutputStream(fileMoves);
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+
+                    try {
+                        fosMoves.write(result[1].getBytes());
+                        fosMoves.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         }
     }
@@ -544,7 +627,7 @@ public class MainActivity extends Activity {
             return accessToken;
         }
 
-        private String getMisfitData() throws IOException, JSONException {
+        private String getMisfitData() throws IOException, JSONException, ParseException {
 
             SharedPreferences prefs = getApplicationContext().getSharedPreferences("Prefs", 0);
             String accessToken = prefs.getString("misfit_access_token", "");
@@ -575,12 +658,32 @@ public class MainActivity extends Activity {
             JSONArray jsonArray = jsonObject.getJSONArray("sleeps");
 
             JSONObject latestSleep = jsonArray.getJSONObject(jsonArray.length()-1);
+            JSONArray sleepDetails = latestSleep.getJSONArray("sleepDetails");
+
             String startTime = latestSleep.getString("startTime");
             int sleepDuration = latestSleep.getInt("duration");
 
-            String misfitData = "Your sleep data (" + sdf2.format(dYesterday) + "):\nSleep starts at"
-                    + startTime + "\nfor the duration of " + (sleepDuration / 60) + " minutes";
+            SimpleDateFormat format1 = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ssZZ");
+            SimpleDateFormat format2 = new SimpleDateFormat("yyyyMMddhhmmss");
 
+            Date startTimeDate = format1.parse(startTime);
+            Long endTime = startTimeDate.getTime() + (sleepDuration*1000);
+//            Log.d("response", endTime +"="+ startTimeDate.getTime() + "+" + sleepDuration);
+            Date endTimeDate = new Date(endTime);
+
+            String misfitData = "";
+            for (int i = 0; i < sleepDetails.length(); i++) {
+                if (i != sleepDetails.length() - 1) {
+                    misfitData += (format2.format(format1.parse(sleepDetails.getJSONObject(i).getString("datetime")))
+                            + "-" + format2.format(format1.parse(sleepDetails.getJSONObject(i+1).getString("datetime")))
+                            + "----" + sleepDetails.getJSONObject(i).getInt("value") + "\n");
+                }
+                else
+                {
+                    misfitData += (format2.format(format1.parse(sleepDetails.getJSONObject(i).getString("datetime")))
+                            + "-" + format2.format(endTimeDate) + "----" + sleepDetails.getJSONObject(i).getInt("value") + "\n");
+                }
+            }
             return misfitData;
         }
 
@@ -596,9 +699,49 @@ public class MainActivity extends Activity {
                 editor.commit();
 
                 misfitToken.setText("Token set");
+
             }
             else if (result[0] == "data") {
-                misfitData.setText(result[1]);
+//                misfitData.setText(result[1]);
+
+                FileOutputStream fosMisfit = null;
+                File fileMisfit;
+                String fileNameMisfit = "";
+
+                if (!isExternalStorageAvailable() || isExternalStorageReadOnly()) {
+                }
+                else {
+
+                    Calendar c = Calendar.getInstance();
+
+                    int monthCal = c.get(Calendar.MONTH) + 1;
+                    int dateCal = c.get(Calendar.DATE);
+                    int yearCal = c.get(Calendar.YEAR);
+                    int hourCal = c.get(Calendar.HOUR_OF_DAY);
+                    int minuteCal = c.get(Calendar.MINUTE);
+                    int secondCal = c.get(Calendar.SECOND);
+
+                    fileNameMisfit = "misfit" + ((monthCal < 10) ? "0" + monthCal : "" + monthCal)
+                            + ((dateCal < 10) ? "0" + dateCal : "" + dateCal)
+                            + yearCal + ((hourCal < 10) ? "0" + hourCal : "" + hourCal)
+                            + ((minuteCal < 10) ? "0" + minuteCal : "" + minuteCal)
+                            + ((secondCal < 10) ? "0" + secondCal : "" + secondCal) + ".txt";
+
+                    fileMisfit = new File(getExternalFilesDir("MyFileStorage"), fileNameMisfit);
+
+                    try {
+                        fosMisfit = new FileOutputStream(fileMisfit);
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+
+                    try {
+                        fosMisfit.write(result[1].getBytes());
+                        fosMisfit.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         }
     }
