@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.hardware.Sensor;
@@ -17,7 +16,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
-import android.os.SystemClock;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -37,17 +35,19 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.InputStreamReader;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.logging.LogRecord;
 
 
 public class MainActivity extends Activity {
@@ -449,4 +449,25 @@ public class MainActivity extends Activity {
         }
         return false;
     }
+
+    private ArrayList<String[]> parseData() throws IOException {
+            File sleepDir;
+            sleepDir = new File(String.valueOf(getExternalFilesDir("MyFileStorage")));
+            File[] sleepFiles = sleepDir.listFiles();
+            for (File file : sleepFiles) {
+                BufferedReader parse = new BufferedReader(new InputStreamReader(openFileInput(file.getName())));
+                StringBuffer buffer = new StringBuffer();
+                String line;
+                while ((line = parse.readLine()) != null) {
+                    String[] data = new String[3];
+                    line.matches("log.*----");
+                    data[0] = line.substring(line.indexOf("log"), line.indexOf("----"));
+                    data[1] = line.substring(line.indexOf("Light: "),line.indexOf(","));
+                    data[2] = line.substring(line.indexOf("Sound: "));
+
+                }
+            }
+        return
+     }
+
 }
