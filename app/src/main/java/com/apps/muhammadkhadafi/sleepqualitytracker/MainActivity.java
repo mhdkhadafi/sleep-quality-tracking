@@ -43,7 +43,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -73,6 +72,8 @@ public class MainActivity extends Activity {
     TextView misfitToken;
     TextView misfitData;
     Button getMisfitData;
+    Button displaySleepData;
+    TextView sleepData;
 
     SoundMeter soundMeter;
     public static Handler mHandler;
@@ -105,6 +106,8 @@ public class MainActivity extends Activity {
         misfitToken = (TextView) findViewById(R.id.receivedTokenMisfit);
         misfitData = (TextView) findViewById(R.id.misfitData);
         getMisfitData = (Button) findViewById(R.id.getMisfitData);
+        displaySleepData = (Button) findViewById(R.id.sleepButton);
+        sleepData = (TextView) findViewById(R.id.sleepData);
 
         SensorManager sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         Sensor lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
@@ -141,6 +144,13 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 new MisfitAsync().execute("data");
+            }
+        });
+
+        getMisfitData.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                new sleepDataParsing().execute();
             }
         });
 
@@ -655,24 +665,44 @@ public class MainActivity extends Activity {
         return false;
     }
 
-    private ArrayList<String[]> parseData() throws IOException {
+    private class sleepDataParsing extends AsyncTask<String, Void, ArrayList<String[]>> {
+        private ArrayList<String[]> parseData() {
             File sleepDir;
+            ArrayList<String[]> sleepList = new ArrayList<String[]>();
+            SimpleDateFormat sdf = new SimpleDateFormat("YYYYMMDDHHmmss");
             sleepDir = new File(String.valueOf(getExternalFilesDir("MyFileStorage")));
             File[] sleepFiles = sleepDir.listFiles();
-            for (File file : sleepFiles) {
-                BufferedReader parse = new BufferedReader(new InputStreamReader(openFileInput(file.getName())));
-                StringBuffer buffer = new StringBuffer();
-                String line;
-                while ((line = parse.readLine()) != null) {
+            try {
+                for (File file : sleepFiles) {
+                    BufferedReader parse = new BufferedReader(new InputStreamReader(openFileInput(file.getName())));
+                    String line;
                     String[] data = new String[3];
-                    line.matches("log.*----");
-                    data[0] = line.substring(line.indexOf("log"), line.indexOf("----"));
-                    data[1] = line.substring(line.indexOf("Light: "),line.indexOf(","));
-                    data[2] = line.substring(line.indexOf("Sound: "));
-
+                    while ((line = parse.readLine()) != null) {
+                        String[] dt = line.split("log"); //1 element
+                        data[0] = dt[0].split("----")[0]; //2 elements
+                        data[1] = dt[0].split("Light: ")[1].split(",")[0]; //2 elements
+                        data[2] = dt[0].split("Sound: ")[1].split(" ")[0];
+                    }
+                    sleepList.add(data);
+                    parse.close();
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        return
-     }
+            return sleepList;
+        }
 
-}
+        @Override
+        protected ArrayList<String[]> doInBackground(String... params) {
+            return parseData();
+        }
+
+        @Override
+        protected void onPostExecute(ArrayList<String[]> result) {
+            super.onPostExecute(result);
+                sleepData.setText(result.toString());
+        }
+        }
+
+    }
+
