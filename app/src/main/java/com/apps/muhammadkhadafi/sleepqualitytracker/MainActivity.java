@@ -27,9 +27,11 @@ import android.widget.Toast;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -46,15 +48,19 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
 
 public class MainActivity extends Activity {
 
-    private static final String REDIRECT_URI = "http://test-mean-heroku.herokuapp.com/";
-    private static final String CLIENT_ID = "uxYOpga5SfmgKE9y4GN7I6ilb9Uzvvw6";
-    private static final String CLIENT_SECRET = "nqmtTvEiH3r4o1L1dr4nZLzC6yUXUrKf6ZF8f39FQX_AdxONcTf9U5GoM8tZl_O5";
+    private static final String MOVES_REDIRECT_URI = "http://test-mean-heroku.herokuapp.com/";
+    private static final String MOVES_CLIENT_ID = "uxYOpga5SfmgKE9y4GN7I6ilb9Uzvvw6";
+    private static final String MOVES_CLIENT_SECRET = "nqmtTvEiH3r4o1L1dr4nZLzC6yUXUrKf6ZF8f39FQX_AdxONcTf9U5GoM8tZl_O5";
+    private static final String MISFIT_CLIENT_ID = "e5OZut6KodmxyrLR";
+    private static final String MISFIT_CLIENT_SECRET = "LjF68gSUo6HknchD5gTO4IQXh4AaTQ8C";
+    private static final String MISFIT_REDIRECT_URI = "https://glacial-ridge-1116.herokuapp.com/";
     private static final int REQUEST_AUTHORIZE = 1;
 
     TextView lightSensor;
@@ -64,6 +70,10 @@ public class MainActivity extends Activity {
     TextView movesData;
     Button getMovesData;
     Button authenticateMisfit;
+    TextView misfitToken;
+    TextView misfitData;
+    Button getMisfitData;
+
     SoundMeter soundMeter;
     public static Handler mHandler;
     public static Timer mTimer = new Timer();
@@ -88,10 +98,13 @@ public class MainActivity extends Activity {
         lightSensor = (TextView) findViewById(R.id.light);
         soundSensor = (TextView) findViewById(R.id.sound);
         authenticateMoves = (Button) findViewById(R.id.authenticateMoves);
-        movesToken = (TextView) findViewById(R.id.receivedToken);
+        movesToken = (TextView) findViewById(R.id.receivedTokenMoves);
         movesData = (TextView) findViewById(R.id.movesData);
         getMovesData = (Button) findViewById(R.id.getMovesData);
         authenticateMisfit = (Button) findViewById(R.id.authenticateMisfit);
+        misfitToken = (TextView) findViewById(R.id.receivedTokenMisfit);
+        misfitData = (TextView) findViewById(R.id.misfitData);
+        getMisfitData = (Button) findViewById(R.id.getMisfitData);
 
         SensorManager sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         Sensor lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
@@ -124,9 +137,30 @@ public class MainActivity extends Activity {
             }
         });
 
-        SharedPreferences movesPrefs = getApplicationContext().getSharedPreferences("MovesPrefs", 0);
-        SharedPreferences.Editor editor = movesPrefs.edit();
-        editor.putString("access_token", "");
+        getMisfitData.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                new MisfitAsync().execute("data");
+            }
+        });
+
+        SharedPreferences prefs = getApplicationContext().getSharedPreferences("Prefs", 0);
+        SharedPreferences.Editor editor = prefs.edit();
+
+        if (prefs.getString("moves_access_token", "").equals("")) {
+            editor.putString("moves_access_token", "");
+        }
+        else {
+            movesToken.setText("Token set");
+            authenticateMoves.setActivated(false);
+        }
+        if (prefs.getString("misfit_access_token", "").equals("")) {
+            editor.putString("misfit_access_token", "");
+        }
+        else {
+            misfitToken.setText("Token set");
+            authenticateMisfit.setActivated(false);
+        }
         editor.commit();
     }
 
@@ -151,6 +185,25 @@ public class MainActivity extends Activity {
     protected void onResume(){
         super.onResume();
 
+        SharedPreferences prefs = getApplicationContext().getSharedPreferences("Prefs", 0);
+        SharedPreferences.Editor editor = prefs.edit();
+
+        if (prefs.getString("moves_access_token", "").equals("")) {
+            editor.putString("moves_access_token", "");
+        }
+        else {
+            movesToken.setText("Token set");
+            authenticateMoves.setActivated(false);
+        }
+        if (prefs.getString("misfit_access_token", "").equals("")) {
+            editor.putString("misfit_access_token", "");
+        }
+        else {
+            misfitToken.setText("Token set");
+            authenticateMisfit.setActivated(false);
+        }
+        editor.commit();
+
         isWriting = true;
 
         soundMeter = new SoundMeter();
@@ -168,9 +221,18 @@ public class MainActivity extends Activity {
                     if (!writeActive) {
                         Calendar c = Calendar.getInstance();
 
-                        filename = "log" + c.get(Calendar.MONTH) + c.get(Calendar.DATE) +
-                                c.get(Calendar.YEAR) + c.get(Calendar.HOUR) +
-                                c.get(Calendar.MINUTE) + c.get(Calendar.SECOND) + ".txt";
+                        int monthCal = c.get(Calendar.MONTH) + 1;
+                        int dateCal = c.get(Calendar.DATE);
+                        int yearCal = c.get(Calendar.YEAR);
+                        int hourCal = c.get(Calendar.HOUR_OF_DAY);
+                        int minuteCal = c.get(Calendar.MINUTE);
+                        int secondCal = c.get(Calendar.SECOND);
+
+                        filename = "log" + ((monthCal < 10) ? "0" + monthCal : "" + monthCal)
+                                + ((dateCal < 10) ? "0" + dateCal : "" + dateCal)
+                                + yearCal + ((hourCal < 10) ? "0" + hourCal : "" + hourCal)
+                                + ((minuteCal < 10) ? "0" + minuteCal : "" + minuteCal)
+                                + ((secondCal < 10) ? "0" + secondCal : "" + secondCal) + ".txt";
 
                         if (!isExternalStorageAvailable() || isExternalStorageReadOnly()) {
                         }
@@ -190,9 +252,18 @@ public class MainActivity extends Activity {
                         if (repeatedHandler == 0) {
                             Calendar c = Calendar.getInstance();
 
-                            String string = "log" + c.get(Calendar.MONTH) + c.get(Calendar.DATE) +
-                                    c.get(Calendar.YEAR) + c.get(Calendar.HOUR) +
-                                    c.get(Calendar.MINUTE) + c.get(Calendar.SECOND) + "---- Light: " +
+                            int monthCal = c.get(Calendar.MONTH) + 1;
+                            int dateCal = c.get(Calendar.DATE);
+                            int yearCal = c.get(Calendar.YEAR);
+                            int hourCal = c.get(Calendar.HOUR_OF_DAY);
+                            int minuteCal = c.get(Calendar.MINUTE);
+                            int secondCal = c.get(Calendar.SECOND);
+
+                            String string = "log" + ((monthCal < 10) ? "0" + monthCal : "" + monthCal)
+                                    + ((dateCal < 10) ? "0" + dateCal : "" + dateCal)
+                                    + yearCal + ((hourCal < 10) ? "0" + hourCal : "" + hourCal)
+                                    + ((minuteCal < 10) ? "0" + minuteCal : "" + minuteCal)
+                                    + ((secondCal < 10) ? "0" + secondCal : "" + secondCal) + "---- Light: " +
                                     lightSensor.getText() + ", Sound: " + soundSensor.getText() + "\n";
 
                             try {
@@ -215,6 +286,20 @@ public class MainActivity extends Activity {
         layout.screenBrightness = 0F;
         getWindow().setAttributes(layout);
         startTimer();
+
+        if (prefs.getString("misfit_access_token", "").equals("")) {
+            editor.putString("misfit_access_token", "");
+
+            Uri misfitUri = getIntent().getData();
+            //        misfitUri.getQueryParameter("code");
+            if (misfitUri != null) {
+                Log.d("response", "misfit" + misfitUri);
+                String misfitCode = ("" + misfitUri).substring(14);
+                new MisfitAsync().execute("token", misfitCode);
+            }
+        }
+
+//        else Log.d("response", "misfit nothing");
     }
 
     @Override
@@ -257,7 +342,9 @@ public class MainActivity extends Activity {
 //            Toast.makeText(this, "Moves app not installed", Toast.LENGTH_SHORT).show();
 //        }
 
-        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://api.misfitwearables.com/auth/dialog/authorize?response_type=code&client_id=e5OZut6KodmxyrLR&redirect_uri=https://glacial-ridge-1116.herokuapp.com/&scope=public,birthday,email"));
+        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://api.misfitwearables" +
+                ".com/auth/dialog/authorize?response_type=code&client_id=e5OZut6KodmxyrLR&redirect_uri=" +
+                "https://glacial-ridge-1116.herokuapp.com/&scope=public,birthday,email"));
         startActivity(browserIntent);
 
     }
@@ -267,8 +354,8 @@ public class MainActivity extends Activity {
                 .scheme(scheme)
                 .authority(authority)
                 .path(path)
-                .appendQueryParameter("client_id", CLIENT_ID)
-                .appendQueryParameter("redirect_uri", REDIRECT_URI)
+                .appendQueryParameter("client_id", MOVES_CLIENT_ID)
+                .appendQueryParameter("redirect_uri", MOVES_REDIRECT_URI)
                 .appendQueryParameter("scope", "location activity");
     }
 
@@ -314,7 +401,8 @@ public class MainActivity extends Activity {
 
             String urlResult = "https://api.moves-app.com/oauth/v1/access_token?" + "" +
                     "grant_type=authorization_code&code=" + authenticationCode + "&client_id=" +
-                    CLIENT_ID + "&client_secret=" + CLIENT_SECRET + "&redirect_uri=" + REDIRECT_URI;
+                    MOVES_CLIENT_ID + "&client_secret=" + MOVES_CLIENT_SECRET + "&redirect_uri=" +
+                    MOVES_REDIRECT_URI;
             HttpClient httpclient = new DefaultHttpClient();
             HttpPost httpPost = new HttpPost(urlResult);
 
@@ -331,8 +419,8 @@ public class MainActivity extends Activity {
 
         private String getMovesData() throws IOException, JSONException {
 
-            SharedPreferences movesPrefs = getApplicationContext().getSharedPreferences("MovesPrefs", 0);
-            String accessToken = movesPrefs.getString("access_token", "");
+            SharedPreferences prefs = getApplicationContext().getSharedPreferences("Prefs", 0);
+            String accessToken = prefs.getString("moves_access_token", "");
 
             Date d = new Date(System.currentTimeMillis() - (1000 * 60 * 60 * 24));
             SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
@@ -384,15 +472,132 @@ public class MainActivity extends Activity {
 
             if (result[0] == "token") {
 
-                SharedPreferences movesPrefs = getApplicationContext().getSharedPreferences("MovesPrefs", 0);
-                SharedPreferences.Editor editor = movesPrefs.edit();
-                editor.putString("access_token", result[1]);
+                SharedPreferences prefs = getApplicationContext().getSharedPreferences("Prefs", 0);
+                SharedPreferences.Editor editor = prefs.edit();
+                editor.putString("moves_access_token", result[1]);
                 editor.commit();
 
                 movesToken.setText("Token set");
             }
             else if (result[0] == "data") {
                 movesData.setText(result[1]);
+            }
+        }
+    }
+
+    private class MisfitAsync extends AsyncTask<String, Void, String[]> {
+
+        @Override
+        protected String[] doInBackground(String... params) {
+
+            String[] returnee = new String[1];
+
+            if (params[0] == "token") {
+                String accessToken = "";
+                try {
+                    accessToken = getAccessToken(params[1]);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                returnee = new String[]{params[0], accessToken};
+//                return returnee;
+            }
+            else if (params[0] == "data") {
+                String movesData = "";
+                try {
+                    movesData = getMisfitData();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                returnee = new String[]{params[0], movesData};
+            }
+
+            return returnee;
+        }
+
+        private String getAccessToken(String authenticationCode) throws IOException, JSONException {
+
+            String urlResult = "https://api.misfitwearables.com/auth/tokens/exchange?" + "" +
+                    "grant_type=authorization_code&code=" + authenticationCode + "&client_id=" +
+                    MISFIT_CLIENT_ID + "&client_secret=" + MISFIT_CLIENT_SECRET + "&redirect_uri=" +
+                    MISFIT_REDIRECT_URI;
+            HttpClient httpclient = new DefaultHttpClient();
+            HttpPost httpPost = new HttpPost(urlResult);
+
+            List nameValuePairs = new ArrayList();
+            nameValuePairs.add(new BasicNameValuePair("grant_type", "authorization_code"));
+            nameValuePairs.add(new BasicNameValuePair("code", authenticationCode));
+            nameValuePairs.add(new BasicNameValuePair("redirect_uri", MISFIT_REDIRECT_URI));
+            nameValuePairs.add(new BasicNameValuePair("client_id", MISFIT_CLIENT_ID));
+            nameValuePairs.add(new BasicNameValuePair("client_secret", MISFIT_CLIENT_SECRET));
+            httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+
+            HttpResponse response = httpclient.execute(httpPost);
+            String responseString = EntityUtils.toString(response.getEntity());
+            Log.d("response", "tokenJSON: " + responseString);
+
+            JSONObject jsonObject = new JSONObject(responseString);
+            String accessToken = jsonObject.getString("access_token");
+            Log.d("response", "token: " + accessToken);
+
+            return accessToken;
+        }
+
+        private String getMisfitData() throws IOException, JSONException {
+
+            SharedPreferences prefs = getApplicationContext().getSharedPreferences("Prefs", 0);
+            String accessToken = prefs.getString("misfit_access_token", "");
+
+            Date dYesterday = new Date(System.currentTimeMillis() - (1000 * 60 * 60 * 24));
+            Date dToday = new Date(System.currentTimeMillis());
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            SimpleDateFormat sdf2 = new SimpleDateFormat("MM/dd/yyyy");
+
+            String yesterdayDate = sdf.format(dYesterday);
+            String todayDate = sdf.format(dToday);
+
+            String urlResult = "https://api.misfitwearables.com/move/resource/v1/user/me/activity/" +
+                    "sleeps?start_date=" + yesterdayDate + "&end_date=" + todayDate;
+
+            HttpClient httpclient = new DefaultHttpClient();
+            HttpGet httpGet = new HttpGet(urlResult);
+
+            httpGet.addHeader("access_token", accessToken);
+
+            Log.d("response", "url: " + urlResult);
+
+            HttpResponse response = httpclient.execute(httpGet);
+            String responseString = EntityUtils.toString(response.getEntity());
+            Log.d("response", "misfitData: " + responseString);
+            //JSONArray responseArray = new JSONArray(responseString);
+            JSONObject jsonObject = new JSONObject(responseString);
+            JSONArray jsonArray = jsonObject.getJSONArray("sleeps");
+
+            JSONObject latestSleep = jsonArray.getJSONObject(jsonArray.length()-1);
+            String startTime = latestSleep.getString("startTime");
+            int sleepDuration = latestSleep.getInt("duration");
+
+            String misfitData = "Your sleep data (" + sdf2.format(dYesterday) + "):\nSleep starts at"
+                    + startTime + "\nfor the duration of " + (sleepDuration / 60) + " minutes";
+
+            return misfitData;
+        }
+
+        @Override
+        protected void onPostExecute(String[] result) {
+            super.onPostExecute(result);
+
+            if (result[0] == "token") {
+
+                SharedPreferences prefs = getApplicationContext().getSharedPreferences("Prefs", 0);
+                SharedPreferences.Editor editor = prefs.edit();
+                editor.putString("misfit_access_token", result[1]);
+                editor.commit();
+
+                misfitToken.setText("Token set");
+            }
+            else if (result[0] == "data") {
+                misfitData.setText(result[1]);
             }
         }
     }
