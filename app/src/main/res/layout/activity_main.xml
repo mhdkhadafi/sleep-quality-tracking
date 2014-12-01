@@ -58,7 +58,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text=""
-        android:id="@+id/receivedToken"
+        android:id="@+id/receivedTokenMoves"
         android:layout_below="@+id/authenticateMoves"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true" />
@@ -68,7 +68,7 @@
         android:layout_height="wrap_content"
         android:text="Get Moves Data"
         android:id="@+id/getMovesData"
-        android:layout_below="@+id/receivedToken"
+        android:layout_below="@+id/receivedTokenMoves"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true" />
 
@@ -87,6 +87,33 @@
         android:text="Authenticate Misfit"
         android:id="@+id/authenticateMisfit"
         android:layout_below="@+id/movesData"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:id="@+id/receivedTokenMisfit"
+        android:layout_toEndOf="@+id/movesData"
+        android:layout_below="@+id/authenticateMisfit"
+        android:layout_toRightOf="@+id/movesData" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Get Misfit Data"
+        android:id="@+id/getMisfitData"
+        android:layout_below="@+id/receivedTokenMisfit"
+        android:layout_toRightOf="@+id/movesData"
+        android:layout_toEndOf="@+id/movesData" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:id="@+id/misfitData"
+        android:layout_below="@+id/getMisfitData"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true" />
 </RelativeLayout>
