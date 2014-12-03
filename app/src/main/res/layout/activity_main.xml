@@ -116,4 +116,13 @@
         android:layout_below="@+id/getMisfitData"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Go get data"
+        android:id="@+id/getData"
+        android:layout_below="@+id/misfitData"
+        android:layout_toRightOf="@+id/misfitData"
+        android:layout_toEndOf="@+id/misfitData" />
 </RelativeLayout>
