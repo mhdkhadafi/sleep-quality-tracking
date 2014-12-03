@@ -73,6 +73,7 @@ public class MainActivity extends Activity {
     TextView misfitToken;
     TextView misfitData;
     Button getMisfitData;
+    Button goGetData;
     TextView sleepData;
 
     SoundMeter soundMeter;
@@ -106,7 +107,8 @@ public class MainActivity extends Activity {
         misfitToken = (TextView) findViewById(R.id.receivedTokenMisfit);
         misfitData = (TextView) findViewById(R.id.misfitData);
         getMisfitData = (Button) findViewById(R.id.getMisfitData);
-        sleepData = (TextView) findViewById(R.id.sleepData);
+        goGetData = (Button) findViewById(R.id.getData);
+//        sleepData = (TextView) findViewById(R.id.sleepData);
 
         SensorManager sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         Sensor lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
@@ -143,6 +145,14 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 new MisfitAsync().execute("data");
+            }
+        });
+
+        goGetData.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(getApplicationContext(), DataDisplayActivity.class);
+                startActivity(i);
             }
         });
 
@@ -250,7 +260,7 @@ public class MainActivity extends Activity {
                         int minuteCal = c.get(Calendar.MINUTE);
                         int secondCal = c.get(Calendar.SECOND);
 
-                        filename = "log" + ((monthCal < 10) ? "0" + monthCal : "" + monthCal)
+                        filename = "env" + ((monthCal < 10) ? "0" + monthCal : "" + monthCal)
                                 + ((dateCal < 10) ? "0" + dateCal : "" + dateCal)
                                 + yearCal + ((hourCal < 10) ? "0" + hourCal : "" + hourCal)
                                 + ((minuteCal < 10) ? "0" + minuteCal : "" + minuteCal)
