@@ -37,12 +37,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -783,33 +781,5 @@ public class MainActivity extends Activity {
         }
         return false;
     }
-
-    private ArrayList<String[]> parseData() {
-        File sleepDir;
-        ArrayList<String[]> sleepList = new ArrayList<String[]>();
-        SimpleDateFormat sdf = new SimpleDateFormat("YYYYMMDDHHmmss");
-        sleepDir = new File(String.valueOf(getExternalFilesDir("MyFileStorage")));
-        File[] sleepFiles = sleepDir.listFiles();
-        try {
-            for (File file : sleepFiles) {
-                BufferedReader parse = new BufferedReader(new InputStreamReader(openFileInput(file.getName())));
-                String line;
-                String[] data = new String[3];
-                while ((line = parse.readLine()) != null) {
-                    if (line.contains("log")) {
-                        data[0] = line.split("log")[1].split("----")[0]; //2 elements
-                        data[1] = line.split("log")[1].split("----")[1].split("Light: ")[1].split(", ")[0];; //2 elements
-                        data[2] = line.split("log")[1].split("----")[1].split("Sound: ")[1].split(" ")[0];
-                    }
-                }
-                sleepList.add(data);
-                parse.close();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return sleepList;
-    }
-
 }
 
