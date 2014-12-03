@@ -42,9 +42,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.text.ParseException;
 import java.io.InputStreamReader;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -52,8 +51,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.lang.Object.*;
-import java.util.logging.LogRecord;
 
 
 public class MainActivity extends Activity {
@@ -76,7 +73,6 @@ public class MainActivity extends Activity {
     TextView misfitToken;
     TextView misfitData;
     Button getMisfitData;
-    Button displaySleepData;
     TextView sleepData;
 
     SoundMeter soundMeter;
@@ -110,7 +106,6 @@ public class MainActivity extends Activity {
         misfitToken = (TextView) findViewById(R.id.receivedTokenMisfit);
         misfitData = (TextView) findViewById(R.id.misfitData);
         getMisfitData = (Button) findViewById(R.id.getMisfitData);
-        displaySleepData = (Button) findViewById(R.id.sleepButton);
         sleepData = (TextView) findViewById(R.id.sleepData);
 
         SensorManager sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
@@ -151,27 +146,18 @@ public class MainActivity extends Activity {
             }
         });
 
-        getMisfitData.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                new sleepDataParsing().execute();
-            }
-        });
-
         SharedPreferences prefs = getApplicationContext().getSharedPreferences("Prefs", 0);
         SharedPreferences.Editor editor = prefs.edit();
 
         if (prefs.getString("moves_access_token", "").equals("")) {
             editor.putString("moves_access_token", "");
-        }
-        else {
+        } else {
             movesToken.setText("Token set");
             authenticateMoves.setActivated(false);
         }
         if (prefs.getString("misfit_access_token", "").equals("")) {
             editor.putString("misfit_access_token", "");
-        }
-        else {
+        } else {
             misfitToken.setText("Token set");
             authenticateMisfit.setActivated(false);
         }
@@ -182,8 +168,7 @@ public class MainActivity extends Activity {
         String fileNameTest = "";
 
         if (!isExternalStorageAvailable() || isExternalStorageReadOnly()) {
-        }
-        else {
+        } else {
 
             fileNameTest = "initial.txt";
             fileTest = new File(getExternalFilesDir("MyFileStorage"), fileNameTest);
@@ -204,7 +189,7 @@ public class MainActivity extends Activity {
     }
 
     @Override
-    protected void onPause(){
+    protected void onPause() {
         super.onPause();
 
         soundMeter.stop();
@@ -221,7 +206,7 @@ public class MainActivity extends Activity {
 
 
     @Override
-    protected void onResume(){
+    protected void onResume() {
         super.onResume();
 
         SharedPreferences prefs = getApplicationContext().getSharedPreferences("Prefs", 0);
@@ -229,15 +214,13 @@ public class MainActivity extends Activity {
 
         if (prefs.getString("moves_access_token", "").equals("")) {
             editor.putString("moves_access_token", "");
-        }
-        else {
+        } else {
             movesToken.setText("Token set");
             authenticateMoves.setActivated(false);
         }
         if (prefs.getString("misfit_access_token", "").equals("")) {
             editor.putString("misfit_access_token", "");
-        }
-        else {
+        } else {
             misfitToken.setText("Token set");
             authenticateMisfit.setActivated(false);
         }
@@ -274,8 +257,7 @@ public class MainActivity extends Activity {
                                 + ((secondCal < 10) ? "0" + secondCal : "" + secondCal) + ".txt";
 
                         if (!isExternalStorageAvailable() || isExternalStorageReadOnly()) {
-                        }
-                        else {
+                        } else {
                             myExternalFile = new File(getExternalFilesDir("MyFileStorage"), filename);
                         }
 
@@ -422,8 +404,7 @@ public class MainActivity extends Activity {
                 }
                 returnee = new String[]{params[0], accessToken};
 //                return returnee;
-            }
-            else if (params[0] == "data") {
+            } else if (params[0] == "data") {
                 String movesData = "";
                 try {
                     movesData = getMovesData();
@@ -514,7 +495,7 @@ public class MainActivity extends Activity {
 
             movesData += ("" + totalDuration);
 
-            Log.d("response", "movesdata: " +movesData);
+            Log.d("response", "movesdata: " + movesData);
 
 //            String movesData = "Your activity data (" + sdf2.format(d) + "):\n" + totalSteps +
 //                    " walking steps\n" + walkingDuration + " walking duration";
@@ -534,8 +515,7 @@ public class MainActivity extends Activity {
                 editor.commit();
 
                 movesToken.setText("Token set");
-            }
-            else if (result[0] == "data") {
+            } else if (result[0] == "data") {
 //                movesData.setText(result[1]);
 
                 FileOutputStream fosMoves = null;
@@ -543,8 +523,7 @@ public class MainActivity extends Activity {
                 String fileNameMoves = "";
 
                 if (!isExternalStorageAvailable() || isExternalStorageReadOnly()) {
-                }
-                else {
+                } else {
 
                     Calendar c = Calendar.getInstance();
 
@@ -596,8 +575,7 @@ public class MainActivity extends Activity {
                 }
                 returnee = new String[]{params[0], accessToken};
 //                return returnee;
-            }
-            else if (params[0] == "data") {
+            } else if (params[0] == "data") {
                 String movesData = "";
                 try {
                     movesData = getMisfitData();
@@ -668,7 +646,7 @@ public class MainActivity extends Activity {
             JSONObject jsonObject = new JSONObject(responseString);
             JSONArray jsonArray = jsonObject.getJSONArray("sleeps");
 
-            JSONObject latestSleep = jsonArray.getJSONObject(jsonArray.length()-1);
+            JSONObject latestSleep = jsonArray.getJSONObject(jsonArray.length() - 1);
             JSONArray sleepDetails = latestSleep.getJSONArray("sleepDetails");
 
             String startTime = latestSleep.getString("startTime");
@@ -678,7 +656,7 @@ public class MainActivity extends Activity {
             SimpleDateFormat format2 = new SimpleDateFormat("yyyyMMddhhmmss");
 
             Date startTimeDate = format1.parse(startTime);
-            Long endTime = startTimeDate.getTime() + (sleepDuration*1000);
+            Long endTime = startTimeDate.getTime() + (sleepDuration * 1000);
 //            Log.d("response", endTime +"="+ startTimeDate.getTime() + "+" + sleepDuration);
             Date endTimeDate = new Date(endTime);
 
@@ -686,11 +664,9 @@ public class MainActivity extends Activity {
             for (int i = 0; i < sleepDetails.length(); i++) {
                 if (i != sleepDetails.length() - 1) {
                     misfitData += (format2.format(format1.parse(sleepDetails.getJSONObject(i).getString("datetime")))
-                            + "-" + format2.format(format1.parse(sleepDetails.getJSONObject(i+1).getString("datetime")))
+                            + "-" + format2.format(format1.parse(sleepDetails.getJSONObject(i + 1).getString("datetime")))
                             + "----" + sleepDetails.getJSONObject(i).getInt("value") + "\n");
-                }
-                else
-                {
+                } else {
                     misfitData += (format2.format(format1.parse(sleepDetails.getJSONObject(i).getString("datetime")))
                             + "-" + format2.format(endTimeDate) + "----" + sleepDetails.getJSONObject(i).getInt("value") + "\n");
                 }
@@ -711,8 +687,7 @@ public class MainActivity extends Activity {
 
                 misfitToken.setText("Token set");
 
-            }
-            else if (result[0] == "data") {
+            } else if (result[0] == "data") {
 //                misfitData.setText(result[1]);
 
                 FileOutputStream fosMisfit = null;
@@ -720,8 +695,7 @@ public class MainActivity extends Activity {
                 String fileNameMisfit = "";
 
                 if (!isExternalStorageAvailable() || isExternalStorageReadOnly()) {
-                }
-                else {
+                } else {
 
                     Calendar c = Calendar.getInstance();
 
@@ -810,44 +784,32 @@ public class MainActivity extends Activity {
         return false;
     }
 
-    private class sleepDataParsing extends AsyncTask<String, Void, ArrayList<String[]>> {
-        private ArrayList<String[]> parseData() {
-            File sleepDir;
-            ArrayList<String[]> sleepList = new ArrayList<String[]>();
-            SimpleDateFormat sdf = new SimpleDateFormat("YYYYMMDDHHmmss");
-            sleepDir = new File(String.valueOf(getExternalFilesDir("MyFileStorage")));
-            File[] sleepFiles = sleepDir.listFiles();
-            try {
-                for (File file : sleepFiles) {
-                    BufferedReader parse = new BufferedReader(new InputStreamReader(openFileInput(file.getName())));
-                    String line;
-                    String[] data = new String[3];
-                    while ((line = parse.readLine()) != null) {
-                        String[] dt = line.split("log"); //1 element
-                        data[0] = dt[0].split("----")[0]; //2 elements
-                        data[1] = dt[0].split("Light: ")[1].split(",")[0]; //2 elements
-                        data[2] = dt[0].split("Sound: ")[1].split(" ")[0];
+    private ArrayList<String[]> parseData() {
+        File sleepDir;
+        ArrayList<String[]> sleepList = new ArrayList<String[]>();
+        SimpleDateFormat sdf = new SimpleDateFormat("YYYYMMDDHHmmss");
+        sleepDir = new File(String.valueOf(getExternalFilesDir("MyFileStorage")));
+        File[] sleepFiles = sleepDir.listFiles();
+        try {
+            for (File file : sleepFiles) {
+                BufferedReader parse = new BufferedReader(new InputStreamReader(openFileInput(file.getName())));
+                String line;
+                String[] data = new String[3];
+                while ((line = parse.readLine()) != null) {
+                    if (line.contains("log")) {
+                        data[0] = line.split("log")[1].split("----")[0]; //2 elements
+                        data[1] = line.split("log")[1].split("----")[1].split("Light: ")[1].split(", ")[0];; //2 elements
+                        data[2] = line.split("log")[1].split("----")[1].split("Sound: ")[1].split(" ")[0];
                     }
-                    sleepList.add(data);
-                    parse.close();
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
+                sleepList.add(data);
+                parse.close();
             }
-            return sleepList;
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
-        @Override
-        protected ArrayList<String[]> doInBackground(String... params) {
-            return parseData();
-        }
-
-        @Override
-        protected void onPostExecute(ArrayList<String[]> result) {
-            super.onPostExecute(result);
-                sleepData.setText(result.toString());
-        }
-        }
-
+        return sleepList;
     }
+
+}
 
