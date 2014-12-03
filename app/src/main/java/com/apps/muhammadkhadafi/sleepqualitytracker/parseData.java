@@ -23,7 +23,7 @@ public class ParseData {
 
     private static Object[] parseData(File sleepDir, int arg) {
 
-        SimpleDateFormat sdf = new SimpleDateFormat("MMDDYYYYHHmmss");
+        SimpleDateFormat sdf = new SimpleDateFormat("MMddyyyyHHmmss");
         File[] sleepFiles = sleepDir.listFiles();
 
         try {
