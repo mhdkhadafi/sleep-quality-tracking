@@ -30,6 +30,13 @@
         <activity
             android:name=".DataDisplayActivity" >
         </activity>
+        <activity
+            android:name=".SleepCalendarActivity" >
+        </activity>
+        <activity
+            android:name=".SleepGraphActivity" >
+        </activity>
+        <activity android:name="org.achartengine.GraphicalActivity" />
     </application>
 
 </manifest>

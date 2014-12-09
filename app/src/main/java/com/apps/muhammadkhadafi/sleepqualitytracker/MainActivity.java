@@ -65,14 +65,11 @@ public class MainActivity extends Activity {
     TextView soundSensor;
     Button authenticateMoves;
     TextView movesToken;
-    TextView movesData;
     Button getMovesData;
     Button authenticateMisfit;
     TextView misfitToken;
-    TextView misfitData;
     Button getMisfitData;
     Button goGetData;
-    TextView sleepData;
 
     SoundMeter soundMeter;
     public static Handler mHandler;
@@ -99,11 +96,9 @@ public class MainActivity extends Activity {
         soundSensor = (TextView) findViewById(R.id.sound);
         authenticateMoves = (Button) findViewById(R.id.authenticateMoves);
         movesToken = (TextView) findViewById(R.id.receivedTokenMoves);
-        movesData = (TextView) findViewById(R.id.movesData);
         getMovesData = (Button) findViewById(R.id.getMovesData);
         authenticateMisfit = (Button) findViewById(R.id.authenticateMisfit);
         misfitToken = (TextView) findViewById(R.id.receivedTokenMisfit);
-        misfitData = (TextView) findViewById(R.id.misfitData);
         getMisfitData = (Button) findViewById(R.id.getMisfitData);
         goGetData = (Button) findViewById(R.id.getData);
 //        sleepData = (TextView) findViewById(R.id.sleepData);
@@ -142,14 +137,14 @@ public class MainActivity extends Activity {
         getMisfitData.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                new MisfitAsync().execute("data");
+                new MisfitAsync().execute("data2");
             }
         });
 
         goGetData.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(getApplicationContext(), DataDisplayActivity.class);
+                Intent i = new Intent(getApplicationContext(), SleepCalendarActivity.class);
                 startActivity(i);
             }
         });
@@ -171,29 +166,6 @@ public class MainActivity extends Activity {
         }
         editor.commit();
 
-        FileOutputStream fosTest = null;
-        File fileTest;
-        String fileNameTest = "";
-
-        if (!isExternalStorageAvailable() || isExternalStorageReadOnly()) {
-        } else {
-
-            fileNameTest = "initial.txt";
-            fileTest = new File(getExternalFilesDir("MyFileStorage"), fileNameTest);
-
-            try {
-                fosTest = new FileOutputStream(fileTest);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            }
-
-            try {
-                fosTest.write("testtest".getBytes());
-                fosTest.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     @Override
@@ -591,6 +563,14 @@ public class MainActivity extends Activity {
                     e.printStackTrace();
                 }
                 returnee = new String[]{params[0], movesData};
+            } else if (params[0] == "data2") {
+                String movesData = "";
+                try {
+                    movesData = getMisfitData2();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                returnee = new String[]{params[0], movesData};
             }
 
             return returnee;
@@ -624,6 +604,83 @@ public class MainActivity extends Activity {
             return accessToken;
         }
 
+        private String getMisfitData2() throws IOException, JSONException, ParseException {
+
+            SharedPreferences prefs = getApplicationContext().getSharedPreferences("Prefs", 0);
+            String accessToken = prefs.getString("misfit_access_token", "");
+
+            Date dYesterday = new Date(System.currentTimeMillis() - (1000 * 60 * 60 * 24 *21) - (1000 * 60 * 60 * 24 *8));
+            Date dToday = new Date(System.currentTimeMillis());
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            String yesterdayDate = sdf.format(dYesterday);
+            String todayDate = sdf.format(dToday);
+
+            Log.d("response", "misfitData: " + yesterdayDate);
+
+            String urlResult = "https://api.misfitwearables.com/move/resource/v1/user/me/activity/" +
+                    "sleeps?start_date=" + yesterdayDate + "&end_date=" + todayDate;
+
+            HttpClient httpclient = new DefaultHttpClient();
+            HttpGet httpGet = new HttpGet(urlResult);
+
+            Log.d("access_token", accessToken);
+            httpGet.addHeader("access_token", accessToken);
+
+            Log.d("response", "url: " + urlResult);
+
+            HttpResponse response = httpclient.execute(httpGet);
+            String responseString = EntityUtils.toString(response.getEntity());
+            Log.d("response", "misfitData: " + responseString);
+            //JSONArray responseArray = new JSONArray(responseString);
+            JSONObject jsonObject = new JSONObject(responseString);
+            JSONArray jsonArray = jsonObject.getJSONArray("sleeps");
+
+            String[] allSleepDates = new String[jsonArray.length()];
+            String[] allSleepDetails = new String[jsonArray.length()];
+
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONArray sleepDetails = jsonArray.getJSONObject(i).getJSONArray("sleepDetails");
+
+                String startTime = jsonArray.getJSONObject(i).getString("startTime");
+                int sleepDuration = jsonArray.getJSONObject(i).getInt("duration");
+
+                SimpleDateFormat format1 = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ssZZ");
+                SimpleDateFormat format2 = new SimpleDateFormat("yyyyMMddhhmmss");
+                SimpleDateFormat format3 = new SimpleDateFormat("yyyyMMdd");
+
+                Date startTimeDate = format1.parse(startTime);
+                Long endTime = startTimeDate.getTime() + (sleepDuration * 1000);
+                Date endTimeDate = new Date(endTime);
+
+                String misfitData = "";
+
+                for (int j = 0; j < sleepDetails.length(); j++) {
+                    if (j != sleepDetails.length() - 1) {
+                        misfitData += (format2.format(format1.parse(sleepDetails.getJSONObject(j).getString("datetime")))
+                                + "-" + format2.format(format1.parse(sleepDetails.getJSONObject(j + 1).getString("datetime")))
+                                + "----" + sleepDetails.getJSONObject(j).getInt("value") + "\n");
+                    } else {
+                        misfitData += (format2.format(format1.parse(sleepDetails.getJSONObject(j).getString("datetime")))
+                                + "-" + format2.format(endTimeDate) + "----" + sleepDetails.getJSONObject(j).getInt("value") + "\n");
+                    }
+                }
+
+                allSleepDates[i] = format3.format(endTimeDate);
+                allSleepDetails[i] = misfitData;
+            }
+
+            String returnee = "";
+
+            for (int k= 0; k < allSleepDates.length; k++) {
+                if (k < allSleepDates.length-1) returnee = returnee + allSleepDates[k] + "--detail--" + allSleepDetails[k] + "--next--";
+                else returnee = returnee + allSleepDates[k] + "--detail--" + allSleepDetails[k];
+            }
+
+
+
+            return returnee;
+        }
+
         private String getMisfitData() throws IOException, JSONException, ParseException {
 
             SharedPreferences prefs = getApplicationContext().getSharedPreferences("Prefs", 0);
@@ -632,8 +689,6 @@ public class MainActivity extends Activity {
             Date dYesterday = new Date(System.currentTimeMillis() - (1000 * 60 * 60 * 24));
             Date dToday = new Date(System.currentTimeMillis());
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-            SimpleDateFormat sdf2 = new SimpleDateFormat("MM/dd/yyyy");
-
             String yesterdayDate = sdf.format(dYesterday);
             String todayDate = sdf.format(dToday);
 
@@ -643,6 +698,7 @@ public class MainActivity extends Activity {
             HttpClient httpclient = new DefaultHttpClient();
             HttpGet httpGet = new HttpGet(urlResult);
 
+            Log.d("access_token", accessToken);
             httpGet.addHeader("access_token", accessToken);
 
             Log.d("response", "url: " + urlResult);
@@ -733,6 +789,33 @@ public class MainActivity extends Activity {
                         fosMisfit.close();
                     } catch (IOException e) {
                         e.printStackTrace();
+                    }
+                }
+            } else if (result[0] == "data2") {
+
+                String[] allSleepData = result[1].split("--next--");
+                FileOutputStream fosMisfit = null;
+                File fileMisfit;
+                String fileNameMisfit = "";
+
+                if (!isExternalStorageAvailable() || isExternalStorageReadOnly()) {
+                } else {
+
+                    for (int i = 0; i < allSleepData.length; i++) {
+                        Log.d("sleep", allSleepData[i]);
+                        fileNameMisfit = "misfit"  + allSleepData[i].split("--detail--")[0] + ".txt";
+
+
+
+                        fileMisfit = new File(getExternalFilesDir("MyFileStorage"), fileNameMisfit);
+
+                        try {
+                            fosMisfit = new FileOutputStream(fileMisfit, false);
+                            fosMisfit.write(allSleepData[i].split("--detail--")[1].getBytes());
+                            fosMisfit.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
             }

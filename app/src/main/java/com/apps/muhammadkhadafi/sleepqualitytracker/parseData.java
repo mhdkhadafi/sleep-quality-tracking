@@ -11,7 +11,7 @@ import java.util.ArrayList;
 /**
  * Created by oza on 12/3/14.
  */
-public class ParseData {
+public class parseData {
 
     private static final int TIME = 1;
     private static final int LIGHT = 2;
