@@ -9,12 +9,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -74,7 +70,9 @@ public class DataDisplayActivity extends Activity{
     private void readTextFile(String testType) {
         try {
             File fileToOpen = new File("file not found");
+            ParseData parseData = new ParseData(getExternalFilesDir("MyFileStorage"));
             File[] files = getExternalFilesDir("MyFileStorage").listFiles();
+
             if (testType.equals("env")) {
                 for (int i = 0; i < files.length; i++) {
                     // Get the latest environment file
@@ -119,15 +117,25 @@ public class DataDisplayActivity extends Activity{
             }
 
             if (fileToOpen.exists()) {
-                FileInputStream fIn = new FileInputStream(fileToOpen);
-                BufferedReader myReader = new BufferedReader(
-                        new InputStreamReader(fIn));
-                String aDataRow = "";
+                Date[] timeArray = parseData.getTimeArray();
+                float[] lightArray = parseData.getLightArray();
+                float[] soundArray = parseData.getSoundArray();
+
+
+
+
+                //FileInputStream fIn = new FileInputStream(fileToOpen);
+                //BufferedReader myReader = new BufferedReader(
+                //        new InputStreamReader(fIn));
+                //String aDataRow = "";
                 String aBuffer = "";
-                while ((aDataRow = myReader.readLine()) != null) {
-                    aBuffer += aDataRow + "\n";
+                for (int i = 0; i < timeArray.length; i++) {
+                      aBuffer += timeArray[i] + " Light:" + lightArray[i] + " Sound:" + soundArray[i] + "\n";
                 }
-                myReader.close();
+//                while ((aDataRow = myReader.readLine()) != null) {
+//                    aBuffer += aDataRow + "\n";
+//                }
+//                myReader.close();
                 dataView.setText(aBuffer);
             }
             else {
